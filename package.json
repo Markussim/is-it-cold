@@ -1,0 +1,42 @@
+{
+  "name": "is-it-cold",
+  "version": "0.0.1",
+  "description": "Sends updates for extreame weather",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write .",
+    "lint": "eslint . --fix",
+    "dev": "ts-node src/localRun.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Markussim/is-it-cold.git"
+  },
+  "keywords": [
+    "weather"
+  ],
+  "author": "Markussim",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Markussim/is-it-cold/issues"
+  },
+  "homepage": "https://github.com/Markussim/is-it-cold#readme",
+  "devDependencies": {
+    "@types/node": "^22.15.19",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.0",
+    "prettier": "^3.5.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@types/aws-lambda": "^8.10.149",
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0",
+    "format": "^0.2.2"
+  }
+}

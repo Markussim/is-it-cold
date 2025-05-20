@@ -1,0 +1,24 @@
+{
+  "temperatureNotifications": {
+    "sv": {
+      "hot": "Det är ganska varmt idag asså, hela TEMPERATURE_HIGH°C blir det klockan TEMPERATURE_HIGH_TIME. 🥵",
+      "cold": "Det är ganska kallt idag asså, hela TEMPERATURE_LOW°C blir det klockan TEMPERATURE_LOW_TIME. 🥶",
+      "both": "Det är ganska varmt och kallt idag asså, hela TEMPERATURE_LOW°C klockan TEMPERATURE_LOW_TIME och TEMPERATURE_HIGH°C klockan TEMPERATURE_HIGH_TIME."
+    },
+    "svPast": {
+      "hot": "Det var ganska varmt idag, det blev TEMPERATURE_HIGH°C klockan TEMPERATURE_HIGH_TIME. 🥵",
+      "cold": "Det var ganska kallt idag, det blev TEMPERATURE_LOW°C klockan TEMPERATURE_LOW_TIME. 🥶",
+      "both": "Det var ganska varmt och kallt idag, det blev TEMPERATURE_LOW°C klockan TEMPERATURE_LOW_TIME och TEMPERATURE_HIGH°C klockan TEMPERATURE_HIGH_TIME."
+    },
+    "en": {
+      "hot": "It's really hot today, it will be TEMPERATURE_HIGH°C today at TEMPERATURE_HIGH_TIME. 🥵",
+      "cold": "It's really cold today, it will be TEMPERATURE_LOW°C today at TEMPERATURE_LOW_TIME. 🥶",
+      "both": "It's really hot and cold today, it will be TEMPERATURE_LOW°C at TEMPERATURE_LOW_TIME and TEMPERATURE_HIGH°C at TEMPERATURE_HIGH_TIME."
+    },
+    "enPast": {
+      "hot": "It was really hot today, it was TEMPERATURE_HIGH°C at TEMPERATURE_HIGH_TIME. 🥵",
+      "cold": "It was really cold today, it was TEMPERATURE_LOW°C at TEMPERATURE_LOW_TIME. 🥶",
+      "both": "It was really hot and cold today, it was TEMPERATURE_LOW°C at TEMPERATURE_LOW_TIME and TEMPERATURE_HIGH°C at TEMPERATURE_HIGH_TIME."
+    }
+  }
+}
