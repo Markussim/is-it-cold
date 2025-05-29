@@ -2,15 +2,15 @@ import axios from 'axios';
 import { getExtremeThresholds, unixToDate, unixTimeToTimeOfDay } from './temperatureUtils';
 import { DISCORD_WEBHOOK } from '../config/env';
 import messages from '../messages.json';
-import { DayTemperature } from '../models';
+import { DayWeather } from '../models';
 import { TAG_ID } from '../config/env';
 import console from 'console';
 
 export async function sendNotification(
-  highLowDays: Map<string, DayTemperature>,
+  highLowDays: Map<string, DayWeather>,
   now: Date,
 ): Promise<void> {
-  const { lowThreshold, highThreshold } = getExtremeThresholds(highLowDays, 20);
+  const { lowThreshold, highThreshold, rainThreshold } = getExtremeThresholds(highLowDays, 20);
   const todayKey = unixToDate(now.getTime());
   const todayTemps = highLowDays.get(todayKey);
 
@@ -20,31 +20,41 @@ export async function sendNotification(
   }
 
   let msg: string | null = null;
-  const { high, low, highDate, lowDate } = todayTemps;
+  const { tempHigh: high, tempLow: low, highDate, lowDate } = todayTemps;
   const nowDate = Date.now();
 
   // Compose message
   if (high > highThreshold && low < lowThreshold) {
-    msg = messages.temperatureNotifications.sv.both;
+    msg = messages.notifications.sv.current.both;
   } else if (high > highThreshold) {
     msg =
       highDate && nowDate > highDate
-        ? messages.temperatureNotifications.svPast.hot
-        : messages.temperatureNotifications.sv.hot;
+        ? messages.notifications.sv.past.hot
+        : messages.notifications.sv.current.hot;
   } else if (low < lowThreshold) {
     msg =
       lowDate && nowDate > lowDate
-        ? messages.temperatureNotifications.svPast.cold
-        : messages.temperatureNotifications.sv.cold;
+        ? messages.notifications.sv.past.cold
+        : messages.notifications.sv.current.cold;
   }
+  if (todayTemps.rainAmount > rainThreshold) {
+    if (msg) {
+      msg += '\n';
+    } else {
+      msg = '';
+    }
+    msg += messages.notifications.sv.current.rain;
+  }
+
   if (!msg) return;
 
   msg = msg
     .replace('TEMPERATURE_LOW', String(low))
     .replace('TEMPERATURE_HIGH', String(high))
     .replace('TEMPERATURE_LOW_TIME', unixTimeToTimeOfDay(lowDate))
-    .replace('TEMPERATURE_HIGH_TIME', unixTimeToTimeOfDay(highDate));
-  msg = TAG_ID + ' ' + msg;
+    .replace('TEMPERATURE_HIGH_TIME', unixTimeToTimeOfDay(highDate))
+    .replace('RAIN_AMOUNT', todayTemps.rainAmount.toFixed(1));
+  msg = TAG_ID + '\n' + msg;
 
   await axios.post(DISCORD_WEBHOOK, { content: msg });
   console.log('Notification to Discord:', msg);

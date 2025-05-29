@@ -1,11 +1,13 @@
-export interface DayTemperature {
-  high: number;
-  low: number;
+export interface DayWeather {
+  tempHigh: number;
+  tempLow: number;
   highDate?: number;
   lowDate?: number;
+  rainAmount: number;
 }
 
-export interface Temperature {
+export interface Weather {
   temp: number;
   date: number;
+  rain: number;
 }

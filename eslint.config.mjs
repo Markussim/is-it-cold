@@ -23,7 +23,7 @@ export default [
       // You can add/fine-tune additional TypeScript rules here
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
       '@typescript-eslint/no-unused-vars': ['warn'],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-function-return-type': ['warn', { allowExpressions: true }],
       // Prettier always last!
       ...prettier.rules,
