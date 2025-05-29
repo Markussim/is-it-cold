@@ -1,155 +1,168 @@
 # Weather High/Low Notifier
 
-This project provides a Node.js (TypeScript) module for automatically monitoring weather temperature data over the last four weeks and sending notifications when temperatures become unusually hot or cold for the current day. Notifications are posted to a Discord channel via webhook, in Swedish or English.
+This is a Node.js (TypeScript) module for **automatically monitoring local weather** over the last four weeks and sending notifications when today's weather is unusually hot, cold, or rainy. Notifications are posted to a Discord channel via webhook, and messages are customizable and translatable.
 
 ---
 
 ## Features
 
-- **Fetches** recent historical and predicted temperature data from configured APIs.
-- **Calculates** daily high and low temperatures for the last four weeks.
-- **Determines** extreme temperature thresholds using percentiles.
-- **Sends** customizable notifications to Discord when today is hotter/colder than usual.
-- **Supports** both "live" and "past" notification modes, depending on when highs/lows were recorded.
+- **Fetches** recent historical and predicted temperature/rain data.
+- **Aggregates** daily highs, lows, and rain totals for a rolling 4-week window.
+- **Calculates** "extreme" thresholds using percentiles for high, low, and rain.
+- **Notifies** on Discord when today is unusually hot, cold, or rainy, with templated messages.
+- **Summarizes** in both "live" (“is”) and "past" (“was”) tenses depending on time of peak/trough.
+- **Extensible**: Add new languages or tweak percentiles via messages/config.
 
 ---
 
-## How it Works
+## How It Works
 
-1. **Fetching Data**
-
-   The notifier retrieves:
-
-   - **Historical data** from a weather station (`STATION_URL`)
-   - **Predictions** for the current day/future (`PREDICTION_URL`)
-
-2. **Processing**
-
-   - All temperature readings from the last four weeks plus up to and including tomorrow are combined.
-   - Temperatures are aggregated per day into daily highs and lows.
-
-3. **Threshold Computation**
-
-   - Using the most recent four weeks, it finds an upper and lower percentile (default 20%) to set "extreme" thresholds.
-
-4. **Notification Decision**
-
-   - For the current day, compares highs/lows with thresholds:
-     - If today is both hotter and colder than usual, both messages are sent.
-     - If only one threshold is crossed, only the corresponding message is sent.
-   - Messages are templated (see [`messages.json`](#messagesjson-for-notifications)), supporting both "forecast" ("it will be") and "past" ("it was").
-
-5. **Notification Delivery**
-
-   - Formatted messages are sent to a Discord webhook specified in environment variables.
-   - Messages can tag a Discord role or user.
+1. **Data Fetching:**
+   - Downloads temperature and rain from a historical station API; predictions for today/tomorrow from a forecast API.
+   - You control data sources via the `.env` file.
+2. **Processing:**
+   - Combines source data, calculates daily highs/lows/rain amounts over the past four weeks (to support percentile algorithms).
+   - Handles missing/outlier/invalid values carefully.
+3. **Thresholds:**
+   - Percentile-based: "extreme heat/cold" means hotter/cooler than X% of days in the window.
+   - Rain exceeds "extreme" if today’s rain is more than, e.g., the top 40th percentile (configurable).
+4. **Notifications:**
+   - For the present day, the notifier checks if thresholds are exceeded. If so, sends a templated, customizable Discord message.
+   - Notifies about current or past highs/lows/rain, including time-of-day (e.g., "klockan 14:00").
+   - Tags a specified Discord role or user.
+5. **Reliability:**
+   - Robust error handling: logs fetch/processing failures, reports errors as 500s, never crashes your process.
+   - Supports Lambda/serverless, or can be run standalone for testing.
 
 ---
 
-## Project Structure
+## Quick Start
 
-| Module/File        | Description                                                                         |
-| ------------------ | ----------------------------------------------------------------------------------- |
-| `weatherHandler`   | Main entrypoint for the scheduled notification (exports `handler` for Lambda/cron). |
-| `fetchWeatherData` | Fetches and processes the last 4 weeks' temperature data.                           |
-| `notify`           | Composes and sends a notification message to Discord if appropriate.                |
-| `temperatureUtils` | Utility functions: date conversions, threshold calculation, etc.                    |
-| `models`           | TypeScript interfaces for temperature data.                                         |
-| `messages.json`    | Message templates in Swedish and English.                                           |
-| `config/env`       | Environment variable setup for API URLs, Discord webhook, and Discord tag.          |
-| `localRun.ts`      | Simple script to run the notification manually for testing.                         |
+### 1. Install Dependencies
 
----
+```bash
+npm install
+```
 
-## Setup
+### 2. Configure Environment
 
-1. **Install dependencies**
+Create a `.env` file in the project root with the following:
 
-   ```bash
-   npm install
-   ```
+```ini
+STATION_URL_TEMP=https://path.to/weather-station-temp-api
+STATION_URL_RAIN=https://path.to/weather-station-rain-api
+PREDICTION_URL=https://path.to/weather-predictions-api
+DISCORD_WEBHOOK=https://discord.com/api/webhooks/...
+TAG_ID=<@role-or-user-id>
+```
 
-2. **Configure environment variables**
+- The historical data sources must provide arrays in the format: `{ value: [{ date: unixMs, value: number }, ...] }`.
+- Prediction API must expose `.data.timeSeries[]` as used.
 
-   Create a `.env` file with:
+### 3. (Optional) Edit Message Templates
 
-   ```
-   STATION_URL=https://path.to/weather-station-api
-   PREDICTION_URL=https://path.to/weather-predictions-api
-   DISCORD_WEBHOOK=https://discord.com/api/webhooks/...
-   TAG_ID=<@role-or-user-id>
-   ```
-
-   - `STATION_URL` – Weather station API for historical data (should expose a `.data.value[]` format as used).
-   - `PREDICTION_URL` – Weather forecast API for upcoming temperature predictions.
-   - `DISCORD_WEBHOOK` – Discord channel webhook for message delivery.
-   - `TAG_ID` – Discord role or user mention to tag (e.g. `<@&roleid>` or `<@userid>`).
-
-3. **(Optional) Customize Message Templates**
-
-   Edit `messages.json` to change the wording, language, or add more translations.
+Edit `messages.json` to change wording, add more languages, or adjust tone.
 
 ---
 
 ## Running
 
-### Scheduled/Serverless (AWS Lambda/Cron)
+### Scheduled (Serverless / AWS Lambda / Cron)
 
-- Exported handler (`export async function handler()`) can be set as the entrypoint for your Lambda, serverless function, or scheduled background job.
-
-### Manual/Development
-
-- You can trigger a notification manually by running:
-
-  ```bash
-  npm run ts-node src/localRun.ts
-  ```
-
----
-
-## Configuration Details
-
-### messages.json (for notifications)
-
-Customize per your language and tone. Template variables include:
-
-- `TEMPERATURE_HIGH` – Highest temperature of the day
-- `TEMPERATURE_HIGH_TIME` – Time of the day’s high
-- `TEMPERATURE_LOW` – Lowest temperature of the day
-- `TEMPERATURE_LOW_TIME` – Time of the day’s low
-
-Example (Swedish/past tense):
-
-```json
-"hot":  "Det var ganska varmt idag, det blev TEMPERATURE_HIGH°C klockan TEMPERATURE_HIGH_TIME. 🥵"
-```
-
-### Data Model
+Point your scheduler/serverless handler to the main export:
 
 ```ts
-interface DayTemperature {
-  high: number;
-  low: number;
-  highDate?: number; // Timestamp for the high
-  lowDate?: number; // Timestamp for the low
+export async function handler(): Promise<{ status: number; body?: string }> {
+  // ...
 }
 ```
 
+### Manual / Development
+
+Manually trigger a notification (for testing):
+
+```bash
+npm run dev
+```
+
 ---
 
-## Notes
+## Project Structure
 
-- The notification is **only sent when today's high or low is outside the "normal" range**, as defined by configured percentiles (default: 20th/80th).
-- Can be extended to support more locales, alternative webhook targets, or other weather metrics.
-- Error handling is robust – failures in fetching/processing data will be logged and reported with 500 status, but won’t crash your process.
+| Module/File                      | Description                                             |
+| -------------------------------- | ------------------------------------------------------- |
+| `src/handlers/weatherHandler.ts` | **Entrypoint:** Lambda/cron handler (`export handler`). |
+| `src/lib/fetchWeatherData.ts`    | Fetch and aggregate past 4 weeks of temperatures/rain.  |
+| `src/lib/notify.ts`              | Compose/send Discord message, decide when to notify.    |
+| `src/lib/weatherUtils.ts`        | Date conversions, percentile (threshold) helpers, etc.  |
+| `src/models.ts`                  | TypeScript interfaces for daily weather objects.        |
+| `src/messages.json`              | Language- and situation-specific message templates.     |
+| `src/config/env.ts`              | Loads and exports environmental variables.              |
+| `src/localRun.ts`                | Manually run the notifier for testing/dev.              |
+
+---
+
+## Message Templates
+
+Message templates are in [`messages.json`](src/messages.json), keyed by event type and language. Variables are:
+
+- `TEMPERATURE_HIGH`, `TEMPERATURE_HIGH_TIME`
+- `TEMPERATURE_LOW`, `TEMPERATURE_LOW_TIME`
+- `RAIN_AMOUNT`
+
+Example (Swedish, "past" notification):
+
+```json
+"hot":  "Det är ganska varmt idag asså, hela TEMPERATURE_HIGH°C blir det klockan TEMPERATURE_HIGH_TIME. 🥵"
+```
+
+---
+
+## Data Models & Percentiles
+
+Daily weather object:
+
+```typescript
+interface DayWeather {
+  tempHigh: number;
+  tempLow: number;
+  highDate: number; // unix ms timestamp
+  lowDate: number; // unix ms timestamp
+  rainAmount: number;
+}
+```
+
+Percentile cutoff calculation takes all highs, lows, and rain totals from the previous 28 days, sorts them, finds the Xth/100th value to determine "abnormally cold/hot/wet".
+
+---
+
+## Customization & Extending
+
+- **Localization:** Add more languages to `messages.json`.
+- **Change thresholds:** Edit percentile (e.g. 20th/80th) in code or config.
+- **Add metrics:** Add support for wind, humidity, or other weather events.
+- **Alternative channels:** Swap Discord webhook for Slack, email, etc.
 
 ---
 
 ## Example Output
 
-_In Discord, if today is much colder than usual:_
+_In Discord, if today was much colder than normal:_
 
-`<@role> Det är ganska kallt idag asså, hela -12°C blir det klockan 07:00. 🥶`
+```
+<@role>
+Det är ganska kallt idag asså, hela -12°C blir det klockan 07:00. 🥶
+```
+
+_Or if both thresholds exceeded, both messages are included._
+
+---
+
+## Troubleshooting
+
+- If no notification is sent: Likely today's values are not "extreme" vs. the last four weeks.
+- Data missing? Check the APIs, .env variables, and expected data format.
+- For logs/errors, see console/stderr or your serverless logs.
 
 ---
 
