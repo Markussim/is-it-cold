@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getExtremeThresholds, unixToDate, unixTimeToTimeOfDay } from './temperatureUtils';
+import { getExtremeThresholds, unixToDate, unixTimeToTimeOfDay } from './weatherUtils';
 import { DISCORD_WEBHOOK } from '../config/env';
 import messages from '../messages.json';
 import { DayWeather } from '../models';

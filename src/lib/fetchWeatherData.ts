@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { STATION_URL_TEMP, STATION_URL_RAIN, PREDICTION_URL } from '../config/env';
-import { unixToDate, isoDateToUnix } from './temperatureUtils';
+import { unixToDate, isoDateToUnix } from './weatherUtils';
 import { DayWeather, Weather } from '../models';
 
 export async function getFourWeeksHighLow(): Promise<{
