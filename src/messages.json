@@ -5,7 +5,7 @@
         "hot": "Det är ganska varmt idag asså, hela TEMPERATURE_HIGH°C blir det klockan TEMPERATURE_HIGH_TIME. 🥵",
         "cold": "Det är ganska kallt idag asså, hela TEMPERATURE_LOW°C blir det klockan TEMPERATURE_LOW_TIME. 🥶",
         "both": "Det är ganska varmt och kallt idag asså, hela TEMPERATURE_LOW°C klockan TEMPERATURE_LOW_TIME och TEMPERATURE_HIGH°C klockan TEMPERATURE_HIGH_TIME.",
-        "rain": "Det kommer att regna idag, upp till RAIN_AMOUNT mm. ☔"
+        "rain": "Det kommer att regna idag asså, upp till RAIN_AMOUNT mm. ☔"
       },
       "past": {
         "hot": "Det var ganska varmt idag, det blev TEMPERATURE_HIGH°C klockan TEMPERATURE_HIGH_TIME. 🥵",
