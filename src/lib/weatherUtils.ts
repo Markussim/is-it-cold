@@ -1,3 +1,4 @@
+import console from 'console';
 import { DayWeather } from '../models';
 
 export function unixToDate(unixtime: number): string {
@@ -47,6 +48,12 @@ export function getExtremeThresholds(
   const highIndex = Math.max(Math.floor(highs.length * (1 - percentile / 100)), 0);
 
   const rainIndex = Math.max(Math.floor(rains.length * (1 - (percentile * 2) / 100)), 0);
+
+  console.info({
+    lowThreshold: lows[lowIndex],
+    highThreshold: highs[highIndex],
+    rainThreshold: rains[rainIndex],
+  });
 
   return {
     lowThreshold: lows[lowIndex],
