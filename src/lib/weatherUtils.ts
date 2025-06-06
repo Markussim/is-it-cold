@@ -49,12 +49,6 @@ export function getExtremeThresholds(
 
   const rainIndex = Math.max(Math.floor(rains.length * (1 - (percentile * 2) / 100)), 0);
 
-  console.info({
-    lowThreshold: lows[lowIndex],
-    highThreshold: highs[highIndex],
-    rainThreshold: rains[rainIndex],
-  });
-
   return {
     lowThreshold: lows[lowIndex],
     highThreshold: highs[highIndex],

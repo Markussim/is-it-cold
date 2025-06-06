@@ -23,6 +23,18 @@ export async function sendNotification(
   const { tempHigh: high, tempLow: low, highDate, lowDate } = todayTemps;
   const nowDate = Date.now();
 
+  console.info({
+    lowThreshold: lowThreshold,
+    highThreshold: highThreshold,
+    rainThreshold: rainThreshold,
+  });
+
+  console.info({
+    low: low,
+    high: high,
+    rain: Number(todayTemps.rainAmount.toFixed(2)),
+  });
+
   // Compose message
   if (high > highThreshold && low < lowThreshold) {
     msg = messages.notifications.sv.current.both;
