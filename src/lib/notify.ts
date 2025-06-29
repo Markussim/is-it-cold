@@ -61,30 +61,26 @@ export async function sendNotification(
         : messages.notifications.sv.current.cold;
   }
 
+  const isDewHighPast = dewPointHighDate && nowDate > dewPointHighDate;
+  const isDewLowPast = dewPointLowDate && nowDate > dewPointLowDate;
+
+  // --- humidity messages ---
   if (
     todayTemps.dewPointHigh > highDewPointThreshold &&
     todayTemps.dewPointLow < lowDewPointThreshold
   ) {
-    if (msg) {
-      msg += '\n';
-    } else {
-      msg = '';
-    }
+    msg = msg ? msg + '\n' : '';
     msg += messages.notifications.sv.current.humidityBoth;
   } else if (todayTemps.dewPointHigh > highDewPointThreshold) {
-    if (msg) {
-      msg += '\n';
-    } else {
-      msg = '';
-    }
-    msg += messages.notifications.sv.current.humid;
+    msg = msg ? msg + '\n' : '';
+    msg += isDewHighPast
+      ? messages.notifications.sv.past.humid
+      : messages.notifications.sv.current.humid;
   } else if (todayTemps.dewPointLow < lowDewPointThreshold) {
-    if (msg) {
-      msg += '\n';
-    } else {
-      msg = '';
-    }
-    msg += messages.notifications.sv.current.dry;
+    msg = msg ? msg + '\n' : '';
+    msg += isDewLowPast
+      ? messages.notifications.sv.past.dry
+      : messages.notifications.sv.current.dry;
   }
 
   if (todayTemps.rainAmount > rainThreshold) {
