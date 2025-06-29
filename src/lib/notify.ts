@@ -10,7 +10,13 @@ export async function sendNotification(
   highLowDays: Map<string, DayWeather>,
   now: Date,
 ): Promise<void> {
-  const { lowThreshold, highThreshold, rainThreshold } = getExtremeThresholds(highLowDays, 20);
+  const {
+    lowTempThreshold: lowTempThreshold,
+    highTempThreshold: highTempThreshold,
+    lowDewPointThreshold: lowDewPointThreshold,
+    highDewPointThreshold: highDewPointThreshold,
+    rainThreshold,
+  } = getExtremeThresholds(highLowDays, 20);
   const todayKey = unixToDate(now.getTime());
   const todayTemps = highLowDays.get(todayKey);
 
@@ -20,35 +26,67 @@ export async function sendNotification(
   }
 
   let msg: string | null = null;
-  const { tempHigh: high, tempLow: low, highDate, lowDate } = todayTemps;
+  const { tempHigh, tempLow, highTempDate, lowTempDate, dewPointHighDate, dewPointLowDate } =
+    todayTemps;
   const nowDate = Date.now();
 
   console.info({
-    lowThreshold: lowThreshold,
-    highThreshold: highThreshold,
-    rainThreshold: rainThreshold,
+    highTempThreshold,
+    lowTempThreshold,
+    highDewPointThreshold,
+    lowDewPointThreshold,
+    rainThreshold,
   });
 
   console.info({
-    low: low,
-    high: high,
+    lowTemp: tempLow,
+    highTemp: tempHigh,
     rain: Number(todayTemps.rainAmount.toFixed(2)),
+    dewPointHigh: todayTemps.dewPointHigh,
+    dewPointLow: todayTemps.dewPointLow,
   });
 
   // Compose message
-  if (high > highThreshold && low < lowThreshold) {
+  if (tempHigh > highTempThreshold && tempLow < lowTempThreshold) {
     msg = messages.notifications.sv.current.both;
-  } else if (high > highThreshold) {
+  } else if (tempHigh > highTempThreshold) {
     msg =
-      highDate && nowDate > highDate
+      highTempDate && nowDate > highTempDate
         ? messages.notifications.sv.past.hot
         : messages.notifications.sv.current.hot;
-  } else if (low < lowThreshold) {
+  } else if (tempLow < lowTempThreshold) {
     msg =
-      lowDate && nowDate > lowDate
+      lowTempDate && nowDate > lowTempDate
         ? messages.notifications.sv.past.cold
         : messages.notifications.sv.current.cold;
   }
+
+  if (
+    todayTemps.dewPointHigh > highDewPointThreshold &&
+    todayTemps.dewPointLow < lowDewPointThreshold
+  ) {
+    if (msg) {
+      msg += '\n';
+    } else {
+      msg = '';
+    }
+    msg += messages.notifications.sv.current.humidityBoth;
+  } else if (todayTemps.dewPointHigh > highDewPointThreshold) {
+    if (msg) {
+      msg += '\n';
+    } else {
+      msg = '';
+    }
+    msg += messages.notifications.sv.current.humid;
+  } else if (todayTemps.dewPointLow < lowDewPointThreshold) {
+    if (msg) {
+      msg += '\n';
+    } else {
+      msg = '';
+    }
+    msg += messages.notifications.sv.current.dry;
+  }
+
   if (todayTemps.rainAmount > rainThreshold) {
     if (msg) {
       msg += '\n';
@@ -61,11 +99,15 @@ export async function sendNotification(
   if (!msg) return;
 
   msg = msg
-    .replace('TEMPERATURE_LOW', String(low))
-    .replace('TEMPERATURE_HIGH', String(high))
-    .replace('TEMPERATURE_LOW_TIME', unixTimeToTimeOfDay(lowDate))
-    .replace('TEMPERATURE_HIGH_TIME', unixTimeToTimeOfDay(highDate))
-    .replace('RAIN_AMOUNT', todayTemps.rainAmount.toFixed(1));
+    .replace('TEMPERATURE_LOW', String(tempLow))
+    .replace('TEMPERATURE_HIGH', String(tempHigh))
+    .replace('TEMPERATURE_LOW_TIME', unixTimeToTimeOfDay(lowTempDate))
+    .replace('TEMPERATURE_HIGH_TIME', unixTimeToTimeOfDay(highTempDate))
+    .replace('RAIN_AMOUNT', todayTemps.rainAmount.toFixed(1))
+    .replace('DEWPOINT_HIGH', String(todayTemps.dewPointHigh))
+    .replace('DEWPOINT_LOW', String(todayTemps.dewPointLow))
+    .replace('DEWPOINT_HIGH_TIME', unixTimeToTimeOfDay(dewPointHighDate))
+    .replace('DEWPOINT_LOW_TIME', unixTimeToTimeOfDay(dewPointLowDate));
   msg = TAG_ID + '\n' + msg;
 
   await axios.post(DISCORD_WEBHOOK, { content: msg });

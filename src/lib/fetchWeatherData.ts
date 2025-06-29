@@ -1,6 +1,11 @@
 import axios from 'axios';
-import { STATION_URL_TEMP, STATION_URL_RAIN, PREDICTION_URL } from '../config/env';
-import { unixToDate, isoDateToUnix } from './weatherUtils';
+import {
+  STATION_URL_TEMP,
+  STATION_URL_RAIN,
+  PREDICTION_URL,
+  STATION_URL_HUMIDITY,
+} from '../config/env';
+import { unixToDate, isoDateToUnix, dewPoint } from './weatherUtils';
 import { DayWeather, Weather } from '../models';
 
 export async function getFourWeeksHighLow(): Promise<{
@@ -10,9 +15,10 @@ export async function getFourWeeksHighLow(): Promise<{
   const now = new Date();
   const fourWeeksAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 28);
 
-  const [tempRes, rainRes, predictionRes] = await Promise.all([
+  const [tempRes, rainRes, humidityRes, predictionRes] = await Promise.all([
     axios.get(STATION_URL_TEMP),
     axios.get(STATION_URL_RAIN),
+    axios.get(STATION_URL_HUMIDITY),
     axios.get(PREDICTION_URL),
   ]);
 
@@ -33,6 +39,17 @@ export async function getFourWeeksHighLow(): Promise<{
     tempEntry.rain = Number(entry.value);
   }
 
+  // Add dew point (Like temperature, but with humidity)
+  for (const entry of tempRes.data.value) {
+    // Find the matching temperature entry
+    const tempEntry = weatherArray.find((w) => w.date === entry.date);
+    if (!tempEntry) continue;
+    const humidityEntry = humidityRes.data.value.find((h: any) => h.date === entry.date);
+    if (!humidityEntry) continue;
+    const dewPointTemp = dewPoint(Number(entry.value), Number(humidityEntry.value));
+    tempEntry.dewPoint = dewPointTemp;
+  }
+
   // Add predictions
   const tomorrowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
 
@@ -43,9 +60,11 @@ export async function getFourWeeksHighLow(): Promise<{
     if (!tParam) continue;
     const pmedianParam = timeEntry.parameters.find((p: any) => p.name === 'pmedian');
     if (!pmedianParam) continue;
+    const humidityParam = timeEntry.parameters.find((p: any) => p.name === 'r');
     const temp = Number(tParam.values[0]);
     const rain = Number(pmedianParam.values[0]);
-    let temperature: Weather = { date: dateMs, temp: temp, rain: rain };
+    const dewPointTemp = dewPoint(temp, Number(humidityParam.values[0]));
+    let temperature: Weather = { date: dateMs, temp: temp, rain: rain, dewPoint: dewPointTemp };
     weatherArray.push(temperature);
   }
 
@@ -63,23 +82,38 @@ export async function getFourWeeksHighLow(): Promise<{
     if (!current) {
       current = {
         tempHigh: tempVal,
-        highDate: entry.date,
+        highTempDate: entry.date,
         tempLow: tempVal,
-        lowDate: entry.date,
+        lowTempDate: entry.date,
         rainAmount: entry.rain,
+        dewPointHigh: entry.dewPoint,
+        dewPointLow: entry.dewPoint,
+        dewPointHighDate: entry.date,
+        dewPointLowDate: entry.date,
       };
     } else {
       // Make sure the current values are numbers!
       current.tempHigh = Number(current.tempHigh);
       current.tempLow = Number(current.tempLow);
+      current.dewPointHigh = Number(current.dewPointHigh);
+      current.dewPointLow = Number(current.dewPointLow);
 
       if (tempVal > current.tempHigh) {
         current.tempHigh = tempVal;
-        current.highDate = entry.date;
+        current.highTempDate = entry.date;
       }
       if (tempVal < current.tempLow) {
         current.tempLow = tempVal;
-        current.lowDate = entry.date;
+        current.lowTempDate = entry.date;
+      }
+
+      if (entry.dewPoint > current.dewPointHigh) {
+        current.dewPointHigh = entry.dewPoint;
+        current.dewPointHighDate = entry.date;
+      }
+      if (entry.dewPoint < current.dewPointLow) {
+        current.dewPointLow = entry.dewPoint;
+        current.dewPointLowDate = entry.date;
       }
 
       if (current.rainAmount === undefined) {
