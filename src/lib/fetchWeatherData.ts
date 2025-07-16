@@ -11,6 +11,7 @@ import { DayWeather, Weather } from '../models';
 export async function getFourWeeksHighLow(): Promise<{
   highLowDays: Map<string, DayWeather>;
   now: Date;
+  weatherArray: Weather[];
 }> {
   const now = new Date();
   const fourWeeksAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 28);
@@ -48,6 +49,7 @@ export async function getFourWeeksHighLow(): Promise<{
     if (!humidityEntry) continue;
     const dewPointTemp = dewPoint(Number(entry.value), Number(humidityEntry.value));
     tempEntry.dewPoint = dewPointTemp;
+    tempEntry.relativeHumidity = Number(humidityEntry.value);
   }
 
   // Add predictions
@@ -64,7 +66,13 @@ export async function getFourWeeksHighLow(): Promise<{
     const temp = Number(tParam.values[0]);
     const rain = Number(pmedianParam.values[0]);
     const dewPointTemp = dewPoint(temp, Number(humidityParam.values[0]));
-    let temperature: Weather = { date: dateMs, temp: temp, rain: rain, dewPoint: dewPointTemp };
+    let temperature: Weather = {
+      date: dateMs,
+      temp: temp,
+      rain: rain,
+      dewPoint: dewPointTemp,
+      relativeHumidity: Number(humidityParam.values[0]),
+    };
     weatherArray.push(temperature);
   }
 
@@ -132,5 +140,5 @@ export async function getFourWeeksHighLow(): Promise<{
     highLowDays.set(dateKey, current);
   }
 
-  return { highLowDays, now };
+  return { highLowDays, now, weatherArray };
 }

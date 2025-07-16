@@ -15,4 +15,5 @@ export interface Weather {
   date: number;
   rain: number;
   dewPoint: number;
+  relativeHumidity: number;
 }

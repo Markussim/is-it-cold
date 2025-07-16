@@ -2,13 +2,14 @@ import axios from 'axios';
 import { getExtremeThresholds, unixToDate, unixTimeToTimeOfDay } from './weatherUtils';
 import { DISCORD_WEBHOOK } from '../config/env';
 import messages from '../messages.json';
-import { DayWeather } from '../models';
+import { DayWeather, Weather } from '../models';
 import { TAG_ID } from '../config/env';
 import console from 'console';
 
 export async function sendNotification(
   highLowDays: Map<string, DayWeather>,
   now: Date,
+  weatherArray: Weather[],
 ): Promise<void> {
   const {
     lowTempThreshold: lowTempThreshold,
@@ -94,6 +95,10 @@ export async function sendNotification(
 
   if (!msg) return;
 
+  // Find temperature for dewPointHighDate and dewPointLowDate
+  const dewPointHighData = weatherArray.find((w) => w.date === dewPointHighDate);
+  const dewPointLowData = weatherArray.find((w) => w.date === dewPointLowDate);
+
   msg = msg
     .replace('TEMPERATURE_LOW', String(tempLow))
     .replace('TEMPERATURE_HIGH', String(tempHigh))
@@ -103,7 +108,12 @@ export async function sendNotification(
     .replace('DEWPOINT_HIGH', String(todayTemps.dewPointHigh))
     .replace('DEWPOINT_LOW', String(todayTemps.dewPointLow))
     .replace('DEWPOINT_HIGH_TIME', unixTimeToTimeOfDay(dewPointHighDate))
-    .replace('DEWPOINT_LOW_TIME', unixTimeToTimeOfDay(dewPointLowDate));
+    .replace('DEWPOINT_LOW_TIME', unixTimeToTimeOfDay(dewPointLowDate))
+    .replace('DEWPOINT_HIGH_TEMP', String(dewPointHighData?.temp))
+    .replace('DEWPOINT_LOW_TEMP', String(dewPointLowData?.temp))
+    .replace('DEWPOINT_HIGH_RELATIVE_HUMIDITY', String(dewPointHighData?.relativeHumidity))
+    .replace('DEWPOINT_LOW_RELATIVE_HUMIDITY', String(dewPointLowData?.relativeHumidity));
+
   msg = TAG_ID + '\n' + msg;
 
   await axios.post(DISCORD_WEBHOOK, { content: msg });
