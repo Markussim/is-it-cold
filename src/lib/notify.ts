@@ -32,15 +32,25 @@ const TOKENS_BY_POINT: Record<DataPoint, string[]> = {
   rain: ['RAIN_AMOUNT'],
 };
 
+const TOKEN_START = '{{';
+const TOKEN_END = '}}';
+
+function wrapToken(token: string): string {
+  return `${TOKEN_START}${token}${TOKEN_END}`;
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Helper: filter out any lines that reference disabled datapoints
 function filterMessageByEnabledPoints(msg: string, enabledPoints: Set<DataPoint>): string {
   const disabledTokens = Object.entries(TOKENS_BY_POINT)
     .filter(([point]) => !enabledPoints.has(point as DataPoint))
-    .flatMap(([, tokens]) => tokens);
+    .flatMap(([, tokens]) => tokens.map(wrapToken)); // look for {{TOKEN}}
 
   const lines = msg.split('\n');
 
-  // Keep a line if it does NOT contain any disabled token
   const filtered = lines.filter((line) => !disabledTokens.some((tok) => line.includes(tok)));
 
   return filtered
@@ -51,15 +61,18 @@ function filterMessageByEnabledPoints(msg: string, enabledPoints: Set<DataPoint>
 
 // Helper: replace tokens safely
 function replaceTokens(msg: string, values: Record<string, string | undefined>): string {
-  let out = msg;
-  for (const [token, value] of Object.entries(values)) {
-    // If value is undefined, leave the token as-is (line likely already filtered out)
-    if (value !== undefined) {
-      // replace all occurrences
-      out = out.split(token).join(value);
-    }
-  }
-  return out;
+  const tokens = Object.keys(values);
+  if (tokens.length === 0) return msg;
+
+  // Build a regex that matches any {{TOKEN}} in values
+  const pattern = new RegExp(tokens.map((t) => escapeRegExp(wrapToken(t))).join('|'), 'g');
+
+  return msg.replace(pattern, (match) => {
+    // Extract the bare token name from {{TOKEN}}
+    const key = match.slice(TOKEN_START.length, match.length - TOKEN_END.length);
+    const val = values[key];
+    return val !== undefined ? val : match; // leave it for cleanup if undefined
+  });
 }
 
 export async function sendNotification(
@@ -190,9 +203,11 @@ export async function sendNotification(
   msg = replaceTokens(msg, tokenValues);
 
   // Clean up any leftover tokens just in case
+  // Clean up any leftover tokens just in case
   const allKnownTokens = new Set(Object.values(TOKENS_BY_POINT).flatMap((arr) => arr));
   for (const token of allKnownTokens) {
-    msg = msg.split(token).join('');
+    const delimited = wrapToken(token); // {{TOKEN}}
+    msg = msg.split(delimited).join('');
   }
   msg = msg
     .replace(/[ \t]+$/gm, '')
