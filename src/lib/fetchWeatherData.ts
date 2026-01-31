@@ -4,6 +4,7 @@ import {
   STATION_URL_RAIN,
   PREDICTION_URL,
   STATION_URL_HUMIDITY,
+  STATION_URL_WIND,
 } from '../config/env';
 import { unixToDate, isoDateToUnix, dewPoint } from './weatherUtils';
 import { DayWeather, Weather } from '../models';
@@ -16,11 +17,12 @@ export async function getFourWeeksHighLow(): Promise<{
   const now = new Date();
   const fourWeeksAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 28);
 
-  const [tempRes, rainRes, humidityRes, predictionRes] = await Promise.all([
+  const [tempRes, rainRes, humidityRes, predictionRes, windRes] = await Promise.all([
     axios.get(STATION_URL_TEMP),
     axios.get(STATION_URL_RAIN),
     axios.get(STATION_URL_HUMIDITY),
     axios.get(PREDICTION_URL),
+    axios.get(STATION_URL_WIND),
   ]);
 
   // Extract temperature
@@ -29,6 +31,7 @@ export async function getFourWeeksHighLow(): Promise<{
         date: obj.date,
         temp: Number(obj.value),
         rain: 0,
+        windSpeed: 0,
       }))
     : [];
 
@@ -49,6 +52,14 @@ export async function getFourWeeksHighLow(): Promise<{
     if (!humidityEntry) continue;
     const dewPointTemp = dewPoint(Number(entry.value), Number(humidityEntry.value));
     tempEntry.dewPoint = dewPointTemp;
+
+    // Add wind speed
+    for (const entry of windRes.data.value) {
+      // Find the matching temperature entry
+      const tempEntry = weatherArray.find((w) => w.date === entry.date);
+      if (!tempEntry) continue;
+      tempEntry.windSpeed = Number(entry.value);
+    }
     tempEntry.relativeHumidity = Number(humidityEntry.value);
   }
 
@@ -63,6 +74,7 @@ export async function getFourWeeksHighLow(): Promise<{
     const pmedianParam = timeEntry.parameters.find((p: any) => p.name === 'pmedian');
     if (!pmedianParam) continue;
     const humidityParam = timeEntry.parameters.find((p: any) => p.name === 'r');
+    const wsParam = timeEntry.parameters.find((p: any) => p.name === 'ws');
     const temp = Number(tParam.values[0]);
     const rain = Number(pmedianParam.values[0]);
     const dewPointTemp = dewPoint(temp, Number(humidityParam.values[0]));
@@ -70,6 +82,7 @@ export async function getFourWeeksHighLow(): Promise<{
       date: dateMs,
       temp: temp,
       rain: rain,
+      windSpeed: wsParam ? Number(wsParam.values[0]) : 0,
       dewPoint: dewPointTemp,
       relativeHumidity: Number(humidityParam.values[0]),
     };
@@ -89,6 +102,8 @@ export async function getFourWeeksHighLow(): Promise<{
     let current = highLowDays.get(dateKey);
     if (!current) {
       current = {
+        windSpeedHigh: entry.windSpeed,
+        windSpeedHighDate: entry.date,
         tempHigh: tempVal,
         highTempDate: entry.date,
         tempLow: tempVal,
@@ -113,6 +128,11 @@ export async function getFourWeeksHighLow(): Promise<{
       if (tempVal < current.tempLow) {
         current.tempLow = tempVal;
         current.lowTempDate = entry.date;
+      }
+
+      if (entry.windSpeed > current.windSpeedHigh) {
+        current.windSpeedHigh = entry.windSpeed;
+        current.windSpeedHighDate = entry.date;
       }
 
       if (entry.dewPoint > current.dewPointHigh) {

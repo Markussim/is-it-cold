@@ -6,6 +6,7 @@
         "cold": "Det är ganska kallt idag asså, hela {{TEMPERATURE_LOW}}°C blir det klockan {{TEMPERATURE_LOW_TIME}}. 🥶",
         "both": "Det är ganska varmt och kallt idag asså, hela {{TEMPERATURE_LOW}}°C klockan {{TEMPERATURE_LOW_TIME}} och {{TEMPERATURE_HIGH}}°C klockan {{TEMPERATURE_HIGH_TIME}}.",
         "rain": "Det kommer att regna idag asså, upp till {{RAIN_AMOUNT}} mm. ☔",
+        "wind": "Det blir riktigt blåsigt idag, hela {{WIND_SPEED_HIGH}} m/s klockan {{WIND_SPEED_HIGH_TIME}}. 💨",
         "humid": "Det är riktigt fuktigt idag asså, daggpunkten når {{DEWPOINT_HIGH}}°C klockan {{DEWPOINT_HIGH_TIME}}. 💧 (Det blir {{DEWPOINT_HIGH_RELATIVE_HUMIDITY}}% och {{DEWPOINT_HIGH_TEMP}}°C)",
         "dry": "Det är riktigt torr luft idag asså, daggpunkten sjunker till {{DEWPOINT_LOW}}°C klockan {{DEWPOINT_LOW_TIME}}. (Det blir {{DEWPOINT_LOW_RELATIVE_HUMIDITY}}% och {{DEWPOINT_LOW_TEMP}}°C)",
         "humidityBoth": "Det blir både fuktigt och torrt idag asså, daggpunkten varierar från {{DEWPOINT_LOW}}°C klockan {{DEWPOINT_LOW_TIME}} till {{DEWPOINT_HIGH}}°C klockan {{DEWPOINT_HIGH_TIME}}."
@@ -14,7 +15,8 @@
         "hot": "Det var ganska varmt idag, det blev {{TEMPERATURE_HIGH}}°C klockan {{TEMPERATURE_HIGH_TIME}}. 🥵",
         "cold": "Det var ganska kallt idag, det blev {{TEMPERATURE_LOW}}°C klockan {{TEMPERATURE_LOW_TIME}}. 🥶",
         "humid": "Det var riktigt fuktigt idag, daggpunkten nådde {{DEWPOINT_HIGH}}°C klockan {{DEWPOINT_HIGH_TIME}}. 💧 (Det var {{DEWPOINT_HIGH_RELATIVE_HUMIDITY}}% och {{DEWPOINT_HIGH_TEMP}}°C)",
-        "dry": "Det var riktigt torr luft idag, daggpunkten sjönk till {{DEWPOINT_LOW}}°C klockan {{DEWPOINT_LOW_TIME}}. (Det var {{DEWPOINT_LOW_RELATIVE_HUMIDITY}}% och {{DEWPOINT_LOW_TEMP}}°C)"
+        "dry": "Det var riktigt torr luft idag, daggpunkten sjönk till {{DEWPOINT_LOW}}°C klockan {{DEWPOINT_LOW_TIME}}. (Det var {{DEWPOINT_LOW_RELATIVE_HUMIDITY}}% och {{DEWPOINT_LOW_TEMP}}°C)",
+        "wind": "Det var riktigt blåsigt idag, hela {{WIND_SPEED_HIGH}} m/s klockan {{WIND_SPEED_HIGH_TIME}}. 💨"
       }
     },
     "en": {
@@ -23,6 +25,7 @@
         "cold": "It's really cold today, it will be {{TEMPERATURE_LOW}}°C at {{TEMPERATURE_LOW_TIME}}. 🥶",
         "both": "It's really hot and cold today, it will be {{TEMPERATURE_LOW}}°C at {{TEMPERATURE_LOW_TIME}} and {{TEMPERATURE_HIGH}}°C at {{TEMPERATURE_HIGH_TIME}}.",
         "rain": "It's going to rain today, up to {{RAIN_AMOUNT}} mm at {{RAIN_TIME}}. ☔",
+        "wind": "It's going to be really windy today, the wind will reach {{WIND_SPEED_HIGH}} m/s at {{WIND_SPEED_HIGH_TIME}}. 💨",
         "humid": "It's very humid today, the dew point will reach {{DEWPOINT_HIGH}}°C at {{DEWPOINT_HIGH_TIME}}. 💧 (It will be {{DEWPOINT_HIGH_RELATIVE_HUMIDITY}}% and {{DEWPOINT_HIGH_TEMP}}°C)",
         "dry": "The air is really dry today, the dew point will drop to {{DEWPOINT_LOW}}°C at {{DEWPOINT_LOW_TIME}}. (It will be {{DEWPOINT_LOW_RELATIVE_HUMIDITY}}% and {{DEWPOINT_LOW_TEMP}}°C)",
         "humidityBoth": "It will be both humid and dry today, with the dew point ranging from {{DEWPOINT_LOW}}°C at {{DEWPOINT_LOW_TIME}} to {{DEWPOINT_HIGH}}°C at {{DEWPOINT_HIGH_TIME}}."
@@ -31,7 +34,8 @@
         "hot": "It was really hot today, it was {{TEMPERATURE_HIGH}}°C at {{TEMPERATURE_HIGH_TIME}}. 🥵",
         "cold": "It was really cold today, it was {{TEMPERATURE_LOW}}°C at {{TEMPERATURE_LOW_TIME}}. 🥶",
         "humid": "It was very humid today, the dew point reached {{DEWPOINT_HIGH}}°C at {{DEWPOINT_HIGH_TIME}}. 💧 (It was {{DEWPOINT_HIGH_RELATIVE_HUMIDITY}}% and {{DEWPOINT_HIGH_TEMP}}°C)",
-        "dry": "The air was really dry today, the dew point dropped to {{DEWPOINT_LOW}}°C at {{DEWPOINT_LOW_TIME}}. (It was {{DEWPOINT_LOW_RELATIVE_HUMIDITY}}% and {{DEWPOINT_LOW_TEMP}}°C)"
+        "dry": "The air was really dry today, the dew point dropped to {{DEWPOINT_LOW}}°C at {{DEWPOINT_LOW_TIME}}. (It was {{DEWPOINT_LOW_RELATIVE_HUMIDITY}}% and {{DEWPOINT_LOW_TEMP}}°C)",
+        "wind": "It was really windy today, the wind reached {{WIND_SPEED_HIGH}} m/s at {{WIND_SPEED_HIGH_TIME}}. 💨"
       }
     }
   }

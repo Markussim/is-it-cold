@@ -33,6 +33,7 @@ export function getExtremeThresholds(
   lowDewPointThreshold: number;
   highDewPointThreshold: number;
   rainThreshold: number;
+  windSpeedHighThreshold: number;
 } {
   const tempLows = Array.from(tempMap.values())
     .map((day) => day.tempLow)
@@ -70,12 +71,19 @@ export function getExtremeThresholds(
 
   const rainIndex = Math.max(Math.floor(rains.length * (1 - (percentile * 2) / 100)), 0);
 
+  const windSpeeds = Array.from(tempMap.values())
+    .map((day) => day.windSpeedHigh)
+    .filter(Boolean)
+    .sort((a, b) => a - b);
+  const windSpeedHighIndex = Math.max(Math.floor(windSpeeds.length * (1 - percentile / 100)), 0);
+
   return {
     lowTempThreshold: tempLows[lowTempIndex],
     highTempThreshold: tempHighs[highTempIndex],
     lowDewPointThreshold: dewPointLows[lowDewPointIndex],
     highDewPointThreshold: dewPointHighs[highDewPointIndex],
     rainThreshold: rains[rainIndex],
+    windSpeedHighThreshold: windSpeeds[windSpeedHighIndex],
   };
 }
 

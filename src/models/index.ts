@@ -8,6 +8,8 @@ export interface DayWeather {
   dewPointLow: number;
   dewPointHighDate?: number;
   dewPointLowDate?: number;
+  windSpeedHigh: number;
+  windSpeedHighDate?: number;
 }
 
 export interface Weather {
@@ -16,4 +18,5 @@ export interface Weather {
   rain: number;
   dewPoint: number;
   relativeHumidity: number;
+  windSpeed: number;
 }

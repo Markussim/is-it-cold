@@ -8,10 +8,10 @@ import console from 'console';
 
 // 1) Define which data points can be toggled on/off,
 //    and which placeholders each point controls.
-type DataPoint = 'tempHigh' | 'tempLow' | 'dewPointHigh' | 'dewPointLow' | 'rain';
+type DataPoint = 'tempHigh' | 'tempLow' | 'dewPointHigh' | 'dewPointLow' | 'rain' | 'windSpeedHigh';
 
 // Edit this array to control which datapoints are allowed in the final message:
-const ENABLED_DATA_POINTS: DataPoint[] = ['tempHigh', 'tempLow', 'rain'];
+const ENABLED_DATA_POINTS: DataPoint[] = ['tempHigh', 'tempLow', 'rain', 'windSpeedHigh'];
 
 // Map datapoints to the placeholders that appear in messages.json templates.
 const TOKENS_BY_POINT: Record<DataPoint, string[]> = {
@@ -30,6 +30,7 @@ const TOKENS_BY_POINT: Record<DataPoint, string[]> = {
     'DEWPOINT_LOW_RELATIVE_HUMIDITY',
   ],
   rain: ['RAIN_AMOUNT'],
+  windSpeedHigh: ['WIND_SPEED_HIGH', 'WIND_SPEED_HIGH_TIME'],
 };
 
 const TOKEN_START = '{{';
@@ -86,6 +87,7 @@ export async function sendNotification(
     lowDewPointThreshold: lowDewPointThreshold,
     highDewPointThreshold: highDewPointThreshold,
     rainThreshold,
+    windSpeedHighThreshold: windSpeedHighThreshold,
   } = getExtremeThresholds(highLowDays, 20);
   const todayKey = unixToDate(now.getTime());
   const todayTemps = highLowDays.get(todayKey);
@@ -96,8 +98,15 @@ export async function sendNotification(
   }
 
   let msg: string | null = null;
-  const { tempHigh, tempLow, highTempDate, lowTempDate, dewPointHighDate, dewPointLowDate } =
-    todayTemps;
+  const {
+    tempHigh,
+    tempLow,
+    highTempDate,
+    lowTempDate,
+    dewPointHighDate,
+    dewPointLowDate,
+    windSpeedHighDate,
+  } = todayTemps;
   const nowDate = Date.now();
 
   console.info({
@@ -106,6 +115,7 @@ export async function sendNotification(
     highDewPointThreshold,
     lowDewPointThreshold,
     rainThreshold,
+    windSpeedHighThreshold,
   });
 
   console.info({
@@ -114,6 +124,7 @@ export async function sendNotification(
     rain: Number(todayTemps.rainAmount.toFixed(2)),
     dewPointHigh: todayTemps.dewPointHigh,
     dewPointLow: todayTemps.dewPointLow,
+    windSpeedHigh: todayTemps.windSpeedHigh,
   });
 
   // Compose message sections from messages.json
@@ -129,6 +140,11 @@ export async function sendNotification(
       lowTempDate && nowDate > lowTempDate
         ? messages.notifications.sv.past.cold
         : messages.notifications.sv.current.cold;
+  } else if (todayTemps.windSpeedHigh > windSpeedHighThreshold) {
+    msg =
+      windSpeedHighDate && nowDate > windSpeedHighDate
+        ? (messages.notifications.sv.past as any)?.wind || messages.notifications.sv.current.wind
+        : messages.notifications.sv.current.wind;
   }
 
   const isDewHighPast = dewPointHighDate && nowDate > dewPointHighDate;
@@ -179,6 +195,8 @@ export async function sendNotification(
     TEMPERATURE_LOW_TIME: unixTimeToTimeOfDay(lowTempDate),
     TEMPERATURE_HIGH_TIME: unixTimeToTimeOfDay(highTempDate),
 
+    WIND_SPEED_HIGH: todayTemps.windSpeedHigh.toFixed(1),
+    WIND_SPEED_HIGH_TIME: unixTimeToTimeOfDay(todayTemps.windSpeedHighDate),
     RAIN_AMOUNT: todayTemps.rainAmount.toFixed(1),
 
     DEWPOINT_HIGH: String(todayTemps.dewPointHigh),
