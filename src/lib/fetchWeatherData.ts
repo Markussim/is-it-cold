@@ -36,31 +36,41 @@ export async function getFourWeeksHighLow(): Promise<{
     : [];
 
   // Add rain
+  // Build a map for fast lookups by timestamp
+  const weatherMap = new Map<number, Weather>();
+  for (const w of weatherArray) {
+    weatherMap.set(w.date, w);
+  }
+
+  // Add rain (fast lookup)
   for (const entry of rainRes.data.value) {
-    // Find the matching temperature entry
-    const tempEntry = weatherArray.find((w) => w.date === entry.date);
+    const tempEntry = weatherMap.get(entry.date);
     if (!tempEntry) continue;
     tempEntry.rain = Number(entry.value);
   }
 
-  // Add dew point (Like temperature, but with humidity)
+  // Build humidity map for fast lookup
+  const humidityMap = new Map<number, any>();
+  for (const h of humidityRes.data.value) {
+    humidityMap.set(h.date, h);
+  }
+
+  // Add dew point using the humidity map
   for (const entry of tempRes.data.value) {
-    // Find the matching temperature entry
-    const tempEntry = weatherArray.find((w) => w.date === entry.date);
+    const tempEntry = weatherMap.get(entry.date);
     if (!tempEntry) continue;
-    const humidityEntry = humidityRes.data.value.find((h: any) => h.date === entry.date);
+    const humidityEntry = humidityMap.get(entry.date);
     if (!humidityEntry) continue;
     const dewPointTemp = dewPoint(Number(entry.value), Number(humidityEntry.value));
     tempEntry.dewPoint = dewPointTemp;
-
-    // Add wind speed
-    for (const entry of windRes.data.value) {
-      // Find the matching temperature entry
-      const tempEntry = weatherArray.find((w) => w.date === entry.date);
-      if (!tempEntry) continue;
-      tempEntry.windSpeed = Number(entry.value);
-    }
     tempEntry.relativeHumidity = Number(humidityEntry.value);
+  }
+
+  // Add wind speed (single pass)
+  for (const entry of windRes.data.value) {
+    const tempEntry = weatherMap.get(entry.date);
+    if (!tempEntry) continue;
+    tempEntry.windSpeed = Number(entry.value);
   }
 
   // Add predictions
