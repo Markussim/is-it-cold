@@ -77,24 +77,24 @@ export async function getFourWeeksHighLow(): Promise<{
   const tomorrowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
 
   for (const timeEntry of predictionRes.data.timeSeries) {
-    const dateMs = isoDateToUnix(timeEntry.validTime);
+    const dateMs = isoDateToUnix(timeEntry.time);
     if (dateMs > tomorrowMidnight) continue;
-    const tParam = timeEntry.parameters.find((p: any) => p.name === 't');
+    const tParam = timeEntry.data.air_temperature;
     if (!tParam) continue;
-    const pmedianParam = timeEntry.parameters.find((p: any) => p.name === 'pmedian');
+    const pmedianParam = timeEntry.data.precipitation_amount_mean;
     if (!pmedianParam) continue;
-    const humidityParam = timeEntry.parameters.find((p: any) => p.name === 'r');
-    const wsParam = timeEntry.parameters.find((p: any) => p.name === 'ws');
-    const temp = Number(tParam.values[0]);
-    const rain = Number(pmedianParam.values[0]);
-    const dewPointTemp = dewPoint(temp, Number(humidityParam.values[0]));
+    const humidityParam = timeEntry.data.relative_humidity;
+    const wsParam = timeEntry.data.wind_speed;
+    const temp = Number(tParam);
+    const rain = Number(pmedianParam);
+    const dewPointTemp = dewPoint(temp, Number(humidityParam));
     let temperature: Weather = {
       date: dateMs,
       temp: temp,
       rain: rain,
-      windSpeed: wsParam ? Number(wsParam.values[0]) : 0,
+      windSpeed: wsParam ? Number(wsParam) : 0,
       dewPoint: dewPointTemp,
-      relativeHumidity: Number(humidityParam.values[0]),
+      relativeHumidity: Number(humidityParam),
     };
     weatherArray.push(temperature);
   }
