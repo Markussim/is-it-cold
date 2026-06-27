@@ -78,24 +78,33 @@ export async function getFourWeeksHighLow(): Promise<{
 
   for (const timeEntry of predictionRes.data.timeSeries) {
     const dateMs = isoDateToUnix(timeEntry.time);
+
     if (dateMs > tomorrowMidnight) continue;
+
     const tParam = timeEntry.data.air_temperature;
-    if (!tParam) continue;
     const pmedianParam = timeEntry.data.precipitation_amount_mean;
-    if (!pmedianParam) continue;
     const humidityParam = timeEntry.data.relative_humidity;
     const wsParam = timeEntry.data.wind_speed;
+
+    if (tParam === undefined || tParam === null) continue;
+
     const temp = Number(tParam);
-    const rain = Number(pmedianParam);
-    const dewPointTemp = dewPoint(temp, Number(humidityParam));
-    let temperature: Weather = {
+    const rain = pmedianParam === undefined || pmedianParam === null ? 0 : Number(pmedianParam);
+
+    const humidity =
+      humidityParam === undefined || humidityParam === null ? 0 : Number(humidityParam);
+
+    const windSpeed = wsParam === undefined || wsParam === null ? 0 : Number(wsParam);
+
+    const temperature: Weather = {
       date: dateMs,
-      temp: temp,
-      rain: rain,
-      windSpeed: wsParam ? Number(wsParam) : 0,
-      dewPoint: dewPointTemp,
-      relativeHumidity: Number(humidityParam),
+      temp,
+      rain,
+      windSpeed,
+      dewPoint: humidity !== undefined ? dewPoint(temp, humidity) : 0,
+      relativeHumidity: humidity,
     };
+
     weatherArray.push(temperature);
   }
 
