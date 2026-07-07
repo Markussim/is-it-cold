@@ -19,6 +19,25 @@
         "wind": "Det var riktigt blåsigt idag, hela {{WIND_SPEED_HIGH}} m/s klockan {{WIND_SPEED_HIGH_TIME}}. 💨"
       }
     },
+    "sv-serious": {
+      "current": {
+        "hot": "Det väntas höga temperaturer idag, upp till {{TEMPERATURE_HIGH}}°C klockan {{TEMPERATURE_HIGH_TIME}}.",
+        "cold": "Det väntas låga temperaturer idag, ned till {{TEMPERATURE_LOW}}°C klockan {{TEMPERATURE_LOW_TIME}}.",
+        "both": "Det väntas stora temperaturvariationer idag, från {{TEMPERATURE_LOW}}°C klockan {{TEMPERATURE_LOW_TIME}} till {{TEMPERATURE_HIGH}}°C klockan {{TEMPERATURE_HIGH_TIME}}.",
+        "rain": "Det väntas regn idag, upp till {{RAIN_AMOUNT}} mm.",
+        "wind": "Det väntas kraftiga vindar idag, upp till {{WIND_SPEED_HIGH}} m/s klockan {{WIND_SPEED_HIGH_TIME}}.",
+        "humid": "Det blir mycket fuktigt idag, med en daggpunkt på {{DEWPOINT_HIGH}}°C klockan {{DEWPOINT_HIGH_TIME}}. (Luftfuktigheten blir {{DEWPOINT_HIGH_RELATIVE_HUMIDITY}}% och temperaturen {{DEWPOINT_HIGH_TEMP}}°C)",
+        "dry": "Luften blir mycket torr idag, med en daggpunkt som sjunker till {{DEWPOINT_LOW}}°C klockan {{DEWPOINT_LOW_TIME}}. (Luftfuktigheten blir {{DEWPOINT_LOW_RELATIVE_HUMIDITY}}% och temperaturen {{DEWPOINT_LOW_TEMP}}°C)",
+        "humidityBoth": "Luftfuktigheten varierar tydligt idag, med en daggpunkt från {{DEWPOINT_LOW}}°C klockan {{DEWPOINT_LOW_TIME}} till {{DEWPOINT_HIGH}}°C klockan {{DEWPOINT_HIGH_TIME}}."
+      },
+      "past": {
+        "hot": "Det var varmt idag, med en högsta temperatur på {{TEMPERATURE_HIGH}}°C klockan {{TEMPERATURE_HIGH_TIME}}.",
+        "cold": "Det var kallt idag, med en lägsta temperatur på {{TEMPERATURE_LOW}}°C klockan {{TEMPERATURE_LOW_TIME}}.",
+        "humid": "Det var mycket fuktigt idag, med en daggpunkt som nådde {{DEWPOINT_HIGH}}°C klockan {{DEWPOINT_HIGH_TIME}}. (Luftfuktigheten var {{DEWPOINT_HIGH_RELATIVE_HUMIDITY}}% och temperaturen {{DEWPOINT_HIGH_TEMP}}°C)",
+        "dry": "Luften var mycket torr idag, med en daggpunkt som sjönk till {{DEWPOINT_LOW}}°C klockan {{DEWPOINT_LOW_TIME}}. (Luftfuktigheten var {{DEWPOINT_LOW_RELATIVE_HUMIDITY}}% och temperaturen {{DEWPOINT_LOW_TEMP}}°C)",
+        "wind": "Det var blåsigt idag, med vindar upp till {{WIND_SPEED_HIGH}} m/s klockan {{WIND_SPEED_HIGH_TIME}}."
+      }
+    },
     "en": {
       "current": {
         "hot": "It's really hot today, it will be {{TEMPERATURE_HIGH}}°C at {{TEMPERATURE_HIGH_TIME}}. 🥵",

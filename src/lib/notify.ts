@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { Buffer } from 'buffer';
+import process from 'process';
 import { getExtremeThresholds, unixToDate, unixTimeToTimeOfDay } from './weatherUtils';
 import { DISCORD_WEBHOOK } from '../config/env';
 import messages from '../messages.json';
@@ -9,6 +11,8 @@ import console from 'console';
 // 1) Define which data points can be toggled on/off,
 //    and which placeholders each point controls.
 type DataPoint = 'tempHigh' | 'tempLow' | 'dewPointHigh' | 'dewPointLow' | 'rain' | 'windSpeedHigh';
+
+type Language = 'sv' | 'sv-serious';
 
 // Edit this array to control which datapoints are allowed in the final message:
 const ENABLED_DATA_POINTS: DataPoint[] = ['tempHigh', 'tempLow', 'rain', 'windSpeedHigh'];
@@ -76,28 +80,23 @@ function replaceTokens(msg: string, values: Record<string, string | undefined>):
   });
 }
 
-export async function sendNotification(
-  highLowDays: Map<string, DayWeather>,
-  now: Date,
-  weatherArray: Weather[],
-): Promise<void> {
-  const {
-    lowTempThreshold: lowTempThreshold,
-    highTempThreshold: highTempThreshold,
-    lowDewPointThreshold: lowDewPointThreshold,
-    highDewPointThreshold: highDewPointThreshold,
-    rainThreshold,
-    windSpeedHighThreshold: windSpeedHighThreshold,
-  } = getExtremeThresholds(highLowDays, 20);
-  const todayKey = unixToDate(now.getTime());
-  const todayTemps = highLowDays.get(todayKey);
-
-  if (!todayTemps) {
-    console.warn('No temperature data for today.');
-    return;
-  }
+function buildNotificationMessage(
+  language: Language,
+  todayTemps: DayWeather,
+  nowDate: number,
+  thresholds: {
+    lowTempThreshold: number;
+    highTempThreshold: number;
+    lowDewPointThreshold: number;
+    highDewPointThreshold: number;
+    rainThreshold: number;
+    windSpeedHighThreshold: number;
+  },
+): string | null {
+  const langMessages = messages.notifications[language];
 
   let msg: string | null = null;
+
   const {
     tempHigh,
     tempLow,
@@ -107,85 +106,78 @@ export async function sendNotification(
     dewPointLowDate,
     windSpeedHighDate,
   } = todayTemps;
-  const nowDate = Date.now();
 
-  console.info({
-    highTempThreshold,
+  const {
     lowTempThreshold,
-    highDewPointThreshold,
+    highTempThreshold,
     lowDewPointThreshold,
+    highDewPointThreshold,
     rainThreshold,
     windSpeedHighThreshold,
-  });
+  } = thresholds;
 
-  console.info({
-    lowTemp: tempLow,
-    highTemp: tempHigh,
-    rain: Number(todayTemps.rainAmount.toFixed(2)),
-    dewPointHigh: todayTemps.dewPointHigh,
-    dewPointLow: todayTemps.dewPointLow,
-    windSpeedHigh: todayTemps.windSpeedHigh,
-  });
-
-  // Compose message sections from messages.json
+  // temperature / wind
   if (tempHigh > highTempThreshold && tempLow < lowTempThreshold) {
-    msg = messages.notifications.sv.current.both;
+    msg = langMessages.current.both;
   } else if (tempHigh > highTempThreshold) {
-    msg =
-      highTempDate && nowDate > highTempDate
-        ? messages.notifications.sv.past.hot
-        : messages.notifications.sv.current.hot;
+    msg = highTempDate && nowDate > highTempDate ? langMessages.past.hot : langMessages.current.hot;
   } else if (tempLow < lowTempThreshold) {
-    msg =
-      lowTempDate && nowDate > lowTempDate
-        ? messages.notifications.sv.past.cold
-        : messages.notifications.sv.current.cold;
+    msg = lowTempDate && nowDate > lowTempDate ? langMessages.past.cold : langMessages.current.cold;
   } else if (todayTemps.windSpeedHigh > windSpeedHighThreshold) {
     msg =
       windSpeedHighDate && nowDate > windSpeedHighDate
-        ? (messages.notifications.sv.past as any)?.wind || messages.notifications.sv.current.wind
-        : messages.notifications.sv.current.wind;
+        ? (langMessages.past as any)?.wind || langMessages.current.wind
+        : langMessages.current.wind;
   }
 
   const isDewHighPast = dewPointHighDate && nowDate > dewPointHighDate;
   const isDewLowPast = dewPointLowDate && nowDate > dewPointLowDate;
 
-  // humidity messages
+  // humidity
   if (
     todayTemps.dewPointHigh > highDewPointThreshold &&
     todayTemps.dewPointLow < lowDewPointThreshold
   ) {
     msg = msg ? msg + '\n' : '';
-    msg += messages.notifications.sv.current.humidityBoth;
+    msg += langMessages.current.humidityBoth;
   } else if (todayTemps.dewPointHigh > highDewPointThreshold) {
     msg = msg ? msg + '\n' : '';
-    msg += isDewHighPast
-      ? messages.notifications.sv.past.humid
-      : messages.notifications.sv.current.humid;
+    msg += isDewHighPast ? langMessages.past.humid : langMessages.current.humid;
   } else if (todayTemps.dewPointLow < lowDewPointThreshold) {
     msg = msg ? msg + '\n' : '';
-    msg += isDewLowPast
-      ? messages.notifications.sv.past.dry
-      : messages.notifications.sv.current.dry;
+    msg += isDewLowPast ? langMessages.past.dry : langMessages.current.dry;
   }
 
+  // rain
   if (todayTemps.rainAmount > rainThreshold) {
     if (msg) {
       msg += '\n';
     } else {
       msg = '';
     }
-    msg += messages.notifications.sv.current.rain;
+    msg += langMessages.current.rain;
   }
 
-  if (!msg) return;
+  return msg;
+}
 
-  // 2) Filter message lines based on enabled data points BEFORE replacements
+function finalizeMessage(
+  msg: string | null,
+  weatherArray: Weather[],
+  todayTemps: DayWeather,
+  tempLow: number,
+  tempHigh: number,
+  lowTempDate: number | undefined,
+  highTempDate: number | undefined,
+  dewPointHighDate: number | undefined,
+  dewPointLowDate: number | undefined,
+): string | null {
+  if (!msg) return null;
+
   const enabled = new Set(ENABLED_DATA_POINTS);
   msg = filterMessageByEnabledPoints(msg, enabled);
-  if (!msg) return;
+  if (!msg) return null;
 
-  // 3) Gather values for placeholders (only enabled will be replaced)
   const dewPointHighData = weatherArray.find((w) => w.date === dewPointHighDate);
   const dewPointLowData = weatherArray.find((w) => w.date === dewPointLowDate);
 
@@ -217,25 +209,162 @@ export async function sendNotification(
         : undefined,
   };
 
-  // 4) Replace only the enabled tokens; disabled tokens should not appear after filtering
   msg = replaceTokens(msg, tokenValues);
 
-  // Clean up any leftover tokens just in case
-  // Clean up any leftover tokens just in case
   const allKnownTokens = new Set(Object.values(TOKENS_BY_POINT).flatMap((arr) => arr));
   for (const token of allKnownTokens) {
-    const delimited = wrapToken(token); // {{TOKEN}}
-    msg = msg.split(delimited).join('');
+    msg = msg.split(wrapToken(token)).join('');
   }
+
   msg = msg
     .replace(/[ \t]+$/gm, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  if (!msg) return;
+  return msg || null;
+}
 
-  msg = TAG_ID + '\n' + msg;
+export async function sendNotification(
+  highLowDays: Map<string, DayWeather>,
+  now: Date,
+  weatherArray: Weather[],
+): Promise<void> {
+  const {
+    lowTempThreshold,
+    highTempThreshold,
+    lowDewPointThreshold,
+    highDewPointThreshold,
+    rainThreshold,
+    windSpeedHighThreshold,
+  } = getExtremeThresholds(highLowDays, 20);
 
-  await axios.post(DISCORD_WEBHOOK, { content: msg });
-  console.log('Notification to Discord:', msg);
+  const todayKey = unixToDate(now.getTime());
+  const todayTemps = highLowDays.get(todayKey);
+
+  if (!todayTemps) {
+    console.warn('No temperature data for today.');
+    return;
+  }
+
+  const { tempHigh, tempLow, highTempDate, lowTempDate, dewPointHighDate, dewPointLowDate } =
+    todayTemps;
+
+  const nowDate = Date.now();
+
+  console.info({
+    highTempThreshold,
+    lowTempThreshold,
+    highDewPointThreshold,
+    lowDewPointThreshold,
+    rainThreshold,
+    windSpeedHighThreshold,
+  });
+
+  console.info({
+    lowTemp: tempLow,
+    highTemp: tempHigh,
+    rain: Number(todayTemps.rainAmount.toFixed(2)),
+    dewPointHigh: todayTemps.dewPointHigh,
+    dewPointLow: todayTemps.dewPointLow,
+    windSpeedHigh: todayTemps.windSpeedHigh,
+  });
+
+  const thresholds = {
+    lowTempThreshold,
+    highTempThreshold,
+    lowDewPointThreshold,
+    highDewPointThreshold,
+    rainThreshold,
+    windSpeedHighThreshold,
+  };
+
+  // Build raw messages for each channel
+  let discordMsg = buildNotificationMessage('sv', todayTemps, nowDate, thresholds);
+  let smsMsg = buildNotificationMessage('sv-serious', todayTemps, nowDate, thresholds);
+
+  // Finalize both messages
+  discordMsg = finalizeMessage(
+    discordMsg,
+    weatherArray,
+    todayTemps,
+    tempLow,
+    tempHigh,
+    lowTempDate,
+    highTempDate,
+    dewPointHighDate,
+    dewPointLowDate,
+  );
+
+  smsMsg = finalizeMessage(
+    smsMsg,
+    weatherArray,
+    todayTemps,
+    tempLow,
+    tempHigh,
+    lowTempDate,
+    highTempDate,
+    dewPointHighDate,
+    dewPointLowDate,
+  );
+
+  // Send Discord in "sv"
+  if (discordMsg) {
+    await sendDiscordWebhook(TAG_ID + '\n' + discordMsg);
+  }
+
+  // Send SMS in "sv-serious"
+  if (smsMsg) {
+    // Comma seperated list of numbers to notify from environment variable
+    const numbersToNotify = process.env.NUMBERS_TO_NOTIFY?.split(',').map((num) => num.trim());
+
+    console.info('Numbers to notify:', numbersToNotify);
+    if (numbersToNotify && numbersToNotify.length > 0) {
+      for (const number of numbersToNotify) {
+        await sendSMSNotification(smsMsg, number);
+      }
+    } else {
+      console.info('No phone numbers specified in NUMBERS_TO_NOTIFY. SMS notification skipped.');
+    }
+  }
+}
+
+async function sendDiscordWebhook(content: string): Promise<void> {
+  try {
+    await axios.post(DISCORD_WEBHOOK, { content });
+    console.log('Notification sent to Discord.');
+  } catch (error) {
+    console.error('Error sending notification to Discord:', error);
+  }
+}
+
+async function sendSMSNotification(content: string, to: string): Promise<void> {
+  try {
+    const username = process.env.SMS_API_USERNAME;
+    const password = process.env.SMS_API_PASSWORD;
+    const from = process.env.SMS_FROM;
+    if (!username || !password || !from || !to) {
+      console.info('SMS notification skipped: missing SMS environment variables.');
+      return;
+    }
+
+    const auth = Buffer.from(`${username}:${password}`).toString('base64');
+    const message = content.replace(/\r?\n/g, ' ').trim();
+
+    const payload = new URLSearchParams({
+      from,
+      to,
+      message,
+    }).toString();
+
+    const response = await axios.post('https://api.46elks.com/a1/sms', payload, {
+      headers: {
+        Authorization: `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+
+    console.log('SMS notification sent:', response.data);
+  } catch (error) {
+    console.error('Error sending SMS notification:', error);
+  }
 }
