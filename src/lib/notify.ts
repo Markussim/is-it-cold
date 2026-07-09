@@ -313,7 +313,7 @@ export async function sendNotification(
   }
 
   // Send SMS in "sv-serious"
-  if (smsMsg) {
+  if (smsMsg && process.env.ENABLE_SMS === 'true') {
     // Comma seperated list of numbers to notify from environment variable
     const numbersToNotify = process.env.NUMBERS_TO_NOTIFY?.split(',').map((num) => num.trim());
 
